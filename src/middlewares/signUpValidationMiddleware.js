@@ -11,7 +11,7 @@ export async function validateNewUser(req, res, next){
     }
 
     const { rows: emailExists } = await db.query(
-        "SELECT * FROM users WHERE email = $1",
+        `SELECT * FROM users WHERE email = $1;`,
         [req.body.email]
     );
 
