@@ -1,5 +1,5 @@
 import { db } from "../database/db.js";
-import { nanoid } from "nanoid";
+import { nanoid, urlAlphabet } from "nanoid";
 
 export async function shorten(req, res){
 
@@ -33,5 +33,39 @@ export async function shorten(req, res){
 
     }
 
+
+}
+
+export async function getUrlById(req, res){
+    
+    const { id } = req.params;
+
+    try {
+
+        const result = await db.query(
+            `SELECT * FROM links
+            WHERE id = $1;`,
+            [id]
+        );
+
+        if (result.rowCount === 0){
+            return res.sendStatus(404);
+        }
+
+        const urlData = result.rows[0];
+
+
+        res.status(200).send({
+            id: urlData.id,
+            shortUrl: urlData.shortUrl,
+            url: urlData.url
+        });
+
+
+    } catch (e) {
+
+        console.log(e);
+        res.sendStatus(500);
+    }
 
 }
