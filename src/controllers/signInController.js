@@ -9,16 +9,18 @@ export async function signIn(req,res){
 
     try {
 
-        const { rows: user } = await db.query(
-            `SELECT * FROM users WHERE email = $1;`,
+        const result = await db.query(
+            `SELECT * FROM users WHERE email = $1`,
             [email]
             );
         
-        if(user.length === 0){
+        if(result.rowCount === 0){
             return res.sendStatus(401);
         }
 
-        const userPassword = bcrypt.compareSync(password, user[0].password); 
+        const user = result.rows[0];
+
+        const userPassword = bcrypt.compareSync(password, user.password); 
 
         if(!userPassword ){
 
@@ -26,6 +28,14 @@ export async function signIn(req,res){
         }
 
         const token = uuid();
+
+        const userId = user.id;
+
+        await db.query(
+            `INSERT INTO sessions ("userId", "token")
+            VALUES($1,$2);`,
+            [userId, token]
+        );
 
         res.status(200).send({
             token
