@@ -69,3 +69,41 @@ export async function getUrlById(req, res){
     }
 
 }
+
+export async function openShortUrl(req,res){
+
+    const { shortUrl } = req.params;
+
+    try{
+
+        const result = await db.query(
+            `SELECT * FROM links 
+            WHERE "shortUrl" = $1;`,
+            [shortUrl]
+        );
+
+        if(result.rowCount === 0){
+            return res.sendStatus(404);
+        }
+
+        const urlData = result.rows[0];
+
+        let linkViews = Number(urlData.visitCount) + 1;
+
+        await db.query(
+            `UPDATE links SET "visitCount" = $1
+            WHERE "shortUrl" = $2;`,
+            [linkViews, shortUrl]
+        );
+
+        const targetUrl = urlData.url;
+
+        res.redirect(targetUrl);
+
+    } catch (e) {
+
+        console.log(e);
+        res.sendStatus(500);
+
+    }
+}
