@@ -1,5 +1,5 @@
 import { db } from "../database/db.js";
-import { nanoid, urlAlphabet } from "nanoid";
+import { nanoid } from "nanoid";
 
 export async function shorten(req, res){
 
@@ -106,4 +106,51 @@ export async function openShortUrl(req,res){
         res.sendStatus(500);
 
     }
+}
+
+export async function deleteUrl(req, res){
+
+    const { id } = req.params;
+
+    const { userId } = res.locals.session;
+
+    try{
+
+        const result = await db.query(
+            `SELECT * FROM links
+            WHERE id = $1;`,
+            [id]
+        );
+    
+        if(result.rowCount === 0){
+            return res.sendStatus(404);
+        }
+    
+    
+        const linkData = result.rows[0];
+    
+        if(userId != linkData.userId){
+
+            return res.sendStatus(401);
+        }
+
+        await db.query(
+            `DELETE FROM links
+            WHERE "id" = $1;`,
+            [id]
+        );
+
+        res.sendStatus(204);
+
+    } catch (e) {
+
+        console.log(e);
+        res.sendStatus(500);
+
+    }
+
+
+
+
+
 }
