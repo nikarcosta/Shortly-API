@@ -155,37 +155,32 @@ export async function getUser(req, res){
 
     const { userId } = res.locals.session;
 
-    try{
+   
 
-        const visitsResult = await db.query(
-            `SELECT SUM("visitCount") FILTER (WHERE "userId" = $1) FROM links;`,
-            [userId]);
+    try {
 
-        const [visitsCount] = visitsResult.rows;
-
-        const urlsResult = await db.query(
-            `SELECT * FROM links 
-            WHERE "userId" = $1`, 
-            [userId]);
-        
-        const userUrls = urlsResult.rows;
-
-        const userDataResult = await db.query(
-            `SELECT * FROM users
-            WHERE "userId" = $1`,
-            [userId]);
-
-        const userData = userDataResult.rows[0];
-
-        const name = userData.name;
+        const userData = (await db.query(
+            `SELECT users.id, users.name,
+            COALESCE(SUM("links"."visitCount"),0) as "visitCount"
+            FROM users
+            LEFT JOIN "links" ON users.id = "links"."userId"
+            WHERE users.id = $1
+            GROUP BY users.id;`,
+            [userId]
+        )).rows[0];
 
 
-        res.status(200).send({
-            id: userId,
-            name,
-            visitCount: visitsCount || 0,
-            shortenedUrls: userUrls
-        });
+        const shortenedUrls = (await db.query(
+            `SELECT id, "shortUrl", url, "visitCount"
+            FROM links
+            WHERE "userId" = $1;`,
+            [userId]
+        )).rows;
+
+        const userDetails = {...userData, shortenedUrls};
+
+        return res.status(200).send(userDetails);
+
 
     } catch (e) {
 
