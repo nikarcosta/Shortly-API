@@ -149,8 +149,49 @@ export async function deleteUrl(req, res){
 
     }
 
+}
+
+export async function getUser(req, res){
+
+    const { userId } = res.locals.session;
+
+    try{
+
+        const visitsResult = await db.query(
+            `SELECT SUM("visitCount") FILTER (WHERE "userId" = $1) FROM links;`,
+            [userId]);
+
+        const [visitsCount] = visitsResult.rows;
+
+        const urlsResult = await db.query(
+            `SELECT * FROM links 
+            WHERE "userId" = $1`, 
+            [userId]);
+        
+        const userUrls = urlsResult.rows;
+
+        const userDataResult = await db.query(
+            `SELECT * FROM users
+            WHERE "userId" = $1`,
+            [userId]);
+
+        const userData = userDataResult.rows[0];
+
+        const name = userData.name;
 
 
+        res.status(200).send({
+            id: userId,
+            name,
+            visitCount: visitsCount || 0,
+            shortenedUrls: userUrls
+        });
 
+    } catch (e) {
+
+        console.log(e);
+        res.sendStatus(500);
+
+    }
 
 }
