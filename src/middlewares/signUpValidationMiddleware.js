@@ -7,7 +7,7 @@ export async function validateNewUser(req, res, next){
 
     if( error ) {
         const errorMessages = error.details.map(err => err.message);
-        return res.status(400).send(errorMessages);
+        return res.status(409).send(errorMessages);
     }
 
     const { rows: emailExists } = await db.query(
